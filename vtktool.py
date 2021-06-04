@@ -2,7 +2,7 @@ import random, math
 import numpy as np
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules import all as vtk
-from typing import Iterable
+from typing import Iterable, Union, Tuple, List, Dict
 
 
 def color_actor(actor, color):
@@ -14,11 +14,11 @@ def color_actor(actor, color):
         actor.GetProperty().SetColor(*color)
 
 
-def point_actor(points_list, color=False, point_size=3):
-    if type(points_list) == vtk.vtkPoints:
+def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False, point_size=3):
+    if isinstance(points_list, vtk.vtkPoints):
         points = points_list
     else:
-        if type(points_list) == list:
+        if isinstance(points_list, list):
             points_list = np.array(points_list)
         points = vtk.vtkPoints()
         points.SetData(numpy_to_vtk(points_list))
@@ -96,7 +96,7 @@ def source_actor(source):
     return actor
 
 
-def vtk_show(*args, color=False, interactor=None, style=None):
+def vtk_show(*args, color: Union[bool, Iterable] = False, interactor=None, style=None):
     render = vtk.vtkRenderer()
     render.SetBackground(0, 0, 0)
     # cam = render.GetActiveCamera()
@@ -119,7 +119,7 @@ def vtk_show(*args, color=False, interactor=None, style=None):
         interactor.SetInteractorStyle(vtk.vtkInteractorStyleMultiTouchCamera())
     # Insert Actor
     for item in args:
-        if type(item) == list or type(item) == np.ndarray:
+        if isinstance(item, (list, np.ndarray)):
             actor = point_actor(item, color)
         elif item.IsA('vtkProp3D') or item.IsA('vtkImageActor') or item.IsA('vtkAssembly'):
             actor = item
