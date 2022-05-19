@@ -66,21 +66,19 @@ def stl_actor(stl_path_or_reader):
     return actor
 
 
-def line_actor(points_list, color=False, line_width=8):
-    if type(points_list) == list:
-        points_list = np.array(points_list)
-    points = vtk.vtkPoints()
-    points.SetData(numpy_to_vtk(points_list))
-    poly_line = vtk.vtkPolyLine()
-    poly_line.GetPointIds().SetNumberOfIds(points.GetNumberOfPoints())
-    for i in range(points.GetNumberOfPoints()):
-        poly_line.GetPointIds().SetId(i, i)
-    grid = vtk.vtkUnstructuredGrid()
-    grid.Allocate(1, 1)
-    grid.InsertNextCell(poly_line.GetCellType(), poly_line.GetPointIds())
-    grid.SetPoints(points)
-    mapper = vtk.vtkDataSetMapper()
-    mapper.SetInputData(grid)
+def line_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False, line_width=8):
+    if isinstance(points_list, vtk.vtkPoints):
+        points = points_list
+    else:
+        if isinstance(points_list, list):
+            points_list = np.array(points_list)
+        points = vtk.vtkPoints()
+        points.SetData(numpy_to_vtk(points_list))
+    line_source = vtk.vtkPolyLineSource()
+    line_source.SetPoints(points)
+
+    mapper = vtk.vtkPolyDataMapper()
+    mapper.SetInputConnection(line_source.GetOutputPort())
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     color_actor(actor, color)

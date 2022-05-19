@@ -1,11 +1,14 @@
 import setuptools
 
 setuptools.setup(
-    name="vtktool",
+    name="zzctool",
     version="0.1.2",
-    author="Zice",
+    author="zjqtzzc",
+    author_email="zjqtzzc1995@gmail.com",
+    url='https://github.com/zjqtzzc/vtkTool',
     description="Zice's vtk tool",
-    py_modules=['vtktool'],
+    # py_modules=['vtktool'],
+    packages=setuptools.find_packages(),
     install_requires=['vtk'],
     classifiers=[
         "Programming Language :: Python :: 3",
