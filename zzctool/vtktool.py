@@ -14,6 +14,21 @@ def color_actor(actor, color):
         actor.GetProperty().SetColor(*color)
 
 
+def intensity_to_rgb(intensity: int):
+    c = np.array([0, 255, 255])
+    m = np.array([255, 0, 255])
+    y = np.array([255, 255, 0])
+    if intensity < 0:
+        rgb = c
+    elif intensity < 128:
+        rgb = c * (128 - intensity) / 128 + y * intensity / 128
+    elif intensity < 256:
+        rgb = y * (256 - intensity) / 128 + m * (intensity - 128) / 128
+    else:
+        rgb = m
+    return rgb.astype(int)
+
+
 def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False, point_size=3):
     if isinstance(points_list, vtk.vtkPoints):
         points = points_list
@@ -31,6 +46,29 @@ def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     color_actor(actor, color)
+    actor.GetProperty().SetPointSize(point_size)
+    return actor
+
+
+def point_actor_with_intensity(points_list: Union[list, np.ndarray], point_size=3):
+    p_list = []
+    colors = vtk.vtkUnsignedCharArray()
+    colors.SetNumberOfComponents(3)
+    colors.SetName("Colors")
+    for x, y, z, i in points_list:
+        p_list.append([x, y, z])
+        colors.InsertNextTuple3(*intensity_to_rgb(i))
+    points = vtk.vtkPoints()
+    points.SetData(numpy_to_vtk(p_list))
+    polydata = vtk.vtkPolyData()
+    polydata.SetPoints(points)
+    polydata.GetPointData().SetScalars(colors)
+    mapper = vtk.vtkPointGaussianMapper()
+    mapper.SetInputData(polydata)
+    mapper.EmissiveOff()
+    mapper.SetScaleFactor(0.0)
+    actor = vtk.vtkActor()
+    actor.SetMapper(mapper)
     actor.GetProperty().SetPointSize(point_size)
     return actor
 

@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="zzctool",
-    version="0.1.2",
+    version="0.1.4",
     author="zjqtzzc",
     author_email="zjqtzzc1995@gmail.com",
     url='https://github.com/zjqtzzc/vtkTool',
