@@ -1,4 +1,6 @@
 import random, math
+
+import numpy
 import numpy as np
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules import all as vtk
@@ -170,16 +172,21 @@ def vtk_show(*args, color: Union[bool, Iterable] = False):
     _display_component.interactor.Start()
 
 
-def MinMax3D(source):
-    p_min = source[0].copy()
-    p_max = source[0].copy()
-    for item in source:
-        for i in range(3):
-            if item[i] > p_max[i]:
-                p_max[i] = item[i]
-            elif item[i] < p_min[i]:
-                p_min[i] = item[i]
-    return p_min, p_max
+def min_max_nd(source):
+    """
+    依次返回n维数组各维度的min、max
+    例如输入n*3点云，返回xmin, xmax, ymin, ymax, zmin, zmax
+    :param source:
+    :return:
+    """
+    if not isinstance(source, numpy.ndarray):
+        source = numpy.array(source)
+    result = []
+    for dim in source.T:
+        result.append(numpy.min(dim))
+        result.append(numpy.max(dim))
+    return tuple(result)
+
 
 
 def center_3D(source):
