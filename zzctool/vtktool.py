@@ -132,41 +132,42 @@ def source_actor(source):
     return actor
 
 
-def vtk_show(*args, color: Union[bool, Iterable] = False, interactor=None, style=None):
-    render = vtk.vtkRenderer()
-    render.SetBackground(0, 0, 0)
-    # cam = render.GetActiveCamera()
-    # cam.SetPosition([3.41, 10.25, 0])
-    # cam.SetFocalPoint([3.41, 0, 0])
-    # cam.SetViewUp([0, 0, -1])
-    # Renderer Window
-    window = vtk.vtkRenderWindow()
-    window.AddRenderer(render)
-    window.SetPosition(0, 3000)
-    window.SetSize(3000, 1600)
-    # System Event
-    if not interactor:
-        interactor = vtk.vtkRenderWindowInteractor()
-    interactor.SetRenderWindow(window)
-    # Style
-    if style:
-        interactor.SetInteractorStyle(style)
-    else:
-        interactor.SetInteractorStyle(vtk.vtkInteractorStyleMultiTouchCamera())
+class _DisplayComponent:
+    def __init__(self):
+        # renderer
+        self.renderer = vtk.vtkRenderer()
+        self.renderer.SetBackground(0, 0, 0)
+        # RenderWindow
+        self.render_window = vtk.vtkRenderWindow()
+        self.render_window.SetPosition(0, 3000)
+        self.render_window.SetSize(3000, 1600)
+        # interactor
+        self.interactor = vtk.vtkRenderWindowInteractor()
+        # connect vtk part
+        self.render_window.AddRenderer(self.renderer)
+        self.interactor.SetRenderWindow(self.render_window)
+        self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleMultiTouchCamera())
+
+
+_display_component = _DisplayComponent()
+
+
+def get_display_component():
+    return _display_component
+
+
+def vtk_show(*args, color: Union[bool, Iterable] = False):
     # Insert Actor
     for item in args:
         if isinstance(item, (list, np.ndarray)):
             actor = point_actor(item, color)
-        elif item.IsA('vtkProp3D') or item.IsA('vtkImageActor') or item.IsA('vtkAssembly'):
-            actor = item
         elif issubclass(type(item), vtk.vtkPolyDataAlgorithm):
             actor = source_actor(item)
         else:
-            print('error')
-            continue
-        render.AddActor(actor)
-    interactor.Initialize()
-    interactor.Start()
+            actor = item
+        _display_component.renderer.AddActor(actor)
+    _display_component.interactor.Initialize()
+    _display_component.interactor.Start()
 
 
 def MinMax3D(source):
