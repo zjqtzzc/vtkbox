@@ -1,12 +1,12 @@
 import setuptools
 
 setuptools.setup(
-    name="zzctool",
+    name="vtkbox",
     version="0.2.0",
     author="zjqtzzc",
     author_email="zjqtzzc1995@gmail.com",
-    url='https://github.com/zjqtzzc/vtkTool',
-    description="Zice's vtk tool",
+    url='https://github.com/zjqtzzc/vtkbox',
+    description="一些个人常用的VTK函数",
     # py_modules=['vtktool'],
     packages=setuptools.find_packages(),
     install_requires=['vtk'],
@@ -15,5 +15,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.9',
 )

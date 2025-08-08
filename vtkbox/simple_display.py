@@ -1,10 +1,10 @@
-import random, math
+import random
 
 import numpy
 import numpy as np
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules import all as vtk
-from typing import Iterable, Union, Tuple, List, Dict
+from typing import Iterable, Union
 
 
 def color_actor(actor, color):
