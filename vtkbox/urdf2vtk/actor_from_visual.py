@@ -6,8 +6,10 @@ from typing import Optional, List
 from urdf_parser_py.urdf import Visual, Box, Cylinder, Sphere, Material, Mesh, Collision
 from vtkmodules import all as vtk
 
+
 class ActorCreator:
     rm_mesh_package_name = False
+
     def __init__(self, mesh_root: str):
         self._material_map = {}
         self._mesh_root = mesh_root
@@ -69,6 +71,8 @@ class ActorCreator:
         else:
             warnings.warn(f'Unknown geometry type: {type(geometry)}')
             return None
+        if source is None:
+            return None
 
         # rpy 生效顺序为 zyx
         transform = vtk.vtkTransform()
@@ -92,6 +96,7 @@ class ActorCreator:
 
         return actor
 
+
 def box_source(size: list):
     source = vtk.vtkCubeSource()
     x, y, z = size
@@ -99,6 +104,7 @@ def box_source(size: list):
     source.SetYLength(y)
     source.SetZLength(z)
     return source
+
 
 def cylinder_source(length: float, radius: float):
     source = vtk.vtkCylinderSource()
@@ -115,6 +121,7 @@ def cylinder_source(length: float, radius: float):
     filter.SetInputConnection(source.GetOutputPort())
     filter.SetTransform(transform)
     return filter
+
 
 def capsule_source(length: float, radius: float):
     import vtk, math
@@ -171,10 +178,11 @@ def capsule_source(length: float, radius: float):
     extrude = vtk.vtkRotationalExtrusionFilter()
     extrude.SetInputData(profile)
     extrude.SetResolution(60)  # 旋转分辨率，可根据需要调整
-    extrude.SetAngle(360)      # 完整旋转 360 度
+    extrude.SetAngle(360)  # 完整旋转 360 度
     extrude.Update()
 
     return extrude
+
 
 def sphere_source(radius: float):
     source = vtk.vtkSphereSource()
@@ -185,7 +193,11 @@ def sphere_source(radius: float):
     source.SetThetaResolution(theta_resolution)
     return source
 
+
 def mesh_source(file_path, scale):
+    if not file_path.lower().endswith('.stl'):
+        warnings.warn('当前版本仅支持stl文件')
+        return None
     reader = vtk.vtkSTLReader()
     reader.SetFileName(file_path)
     if scale is None:
@@ -199,4 +211,3 @@ def mesh_source(file_path, scale):
         transformFilter.SetTransform(transform)
         # transformFilter.Update()
         return transformFilter
-
