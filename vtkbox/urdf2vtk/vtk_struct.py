@@ -27,16 +27,17 @@ class VRobot:
         # create links
         for ulink in urdf.links:
             ulink: ULink
-            actors = []
+            visual_actors = []
+            collision_actors = []
             for visual in ulink.visuals:
                 actor = actor_creator.paser_visual(visual)
                 if actor:
-                    actors.append(actor)
+                    visual_actors.append(actor)
             for collision in ulink.collisions:
                 actor = actor_creator.paser_collision(collision)
                 if actor:
-                    actors.append(actor)
-            link = VLink(ulink.name, actors)
+                    collision_actors.append(actor)
+            link = VLink(ulink.name, visual_actors, collision_actors)
             self.link_map[link.name] = link
 
         # create joints

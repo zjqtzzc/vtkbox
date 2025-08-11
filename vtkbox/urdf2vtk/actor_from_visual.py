@@ -7,7 +7,7 @@ from urdf_parser_py.urdf import Visual, Box, Cylinder, Sphere, Material, Mesh, C
 from vtkmodules import all as vtk
 
 class ActorCreator:
-    rm_mesh_package_name = True
+    rm_mesh_package_name = False
     def __init__(self, mesh_root: str):
         self._material_map = {}
         self._mesh_root = mesh_root

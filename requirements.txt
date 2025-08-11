@@ -1,4 +1,0 @@
-urdf-parser-py
-vtk
-numpy
-PyQt6

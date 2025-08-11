@@ -2,29 +2,38 @@ from vtkmodules import all as vtk
 import numpy
 
 class VLink:
-    def __init__(self, name='', actors = None):
+    def __init__(self, name, visual: list[vtk.vtkActor], collision: list[vtk.vtkActor]):
         self.name = name
         self.prop = vtk.vtkAssembly()
-        for actor in actors:
-            self.prop.AddPart(actor)
-        #
         self.parent: str = None
         self.children = []  # type: list[str]
 
-    def set_visibility(self, value: bool):
-        collection: vtk.vtkProp3DCollection = self.prop.GetParts()
-        collection.InitTraversal()
-        for i in range(collection.GetNumberOfItems()):
-            item = collection.GetNextProp3D()
-            item.SetVisibility(value)
+        self._visual = visual
+        self._collision = collision
 
-    def get_actors(self):
-        collection: vtk.vtkProp3DCollection = self.prop.GetParts()
-        collection.InitTraversal()
-        for i in range(collection.GetNumberOfItems()):
-            item = collection.GetNextProp3D()
-            if isinstance(item, vtk.vtkActor):
-                yield item
+        for actor in self._visual:
+            self.prop.AddPart(actor)
+        for actor in self._collision:
+            self.prop.AddPart(actor)
+
+
+        self._total_visible = True
+        self._collision_visible = False
+        self._update_visibility()
+
+    def set_visibility(self, value: bool):
+        self._total_visible = value
+        self._update_visibility()
+
+    def set_collision_visibility(self, value: bool):
+        self._collision_visible = value
+        self._update_visibility()
+
+    def _update_visibility(self):
+        for actor in self._visual:
+            actor.SetVisibility(self._total_visible)
+        for actor in self._collision:
+            actor.SetVisibility(self._collision_visible and self._total_visible)
 
 
 class VJoint:
