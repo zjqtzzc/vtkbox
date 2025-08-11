@@ -9,7 +9,12 @@ setuptools.setup(
     description="一些个人常用的VTK函数",
     # py_modules=['vtktool'],
     packages=setuptools.find_packages(),
-    install_requires=['vtk'],
+    install_requires=[
+        'vtk',
+        'urdf_parser_py',
+        'numpy'
+        'PyQt6'
+                      ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
