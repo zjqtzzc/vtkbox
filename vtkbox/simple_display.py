@@ -16,19 +16,29 @@ def color_actor(actor, color):
         actor.GetProperty().SetColor(*color)
 
 
-def intensity_to_rgb(intensity: int):
+def intensity_to_rgb(intensity: float):
     c = np.array([0, 255, 255])
     m = np.array([255, 0, 255])
     y = np.array([255, 255, 0])
     if intensity < 0:
         rgb = c
-    elif intensity < 128:
-        rgb = c * (128 - intensity) / 128 + y * intensity / 128
-    elif intensity < 256:
-        rgb = y * (256 - intensity) / 128 + m * (intensity - 128) / 128
+    elif intensity < 0.5:
+        rgb = c * (0.5 - intensity) / 0.5 + y * intensity / 0.5
+    elif intensity < 1:
+        rgb = y * (1 - intensity) / 0.5 + m * (intensity - 0.5) / 0.5
     else:
         rgb = m
     return rgb.astype(int)
+
+def create_color_arr_from_intensity(intensity: numpy.ndarray) :
+    colors = vtk.vtkUnsignedCharArray()
+    colors.SetNumberOfComponents(3)
+    colors.SetName("Colors")
+
+    unit_i = intensity / intensity.max()
+    for i in unit_i:
+        colors.InsertNextTuple3(*intensity_to_rgb(i))
+    return colors
 
 
 def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False, point_size=3):
@@ -53,15 +63,13 @@ def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False
 
 
 def point_actor_with_intensity(points_list: Union[list, np.ndarray], point_size=3):
-    p_list = []
-    colors = vtk.vtkUnsignedCharArray()
-    colors.SetNumberOfComponents(3)
-    colors.SetName("Colors")
-    for x, y, z, i in points_list:
-        p_list.append([x, y, z])
-        colors.InsertNextTuple3(*intensity_to_rgb(i))
+
+    xyz_arr = points_list[:,:3]
+    i_arr = points_list[:,3]
+    colors = create_color_arr_from_intensity(i_arr)
+
     points = vtk.vtkPoints()
-    points.SetData(numpy_to_vtk(p_list))
+    points.SetData(numpy_to_vtk(xyz_arr))
     polydata = vtk.vtkPolyData()
     polydata.SetPoints(points)
     polydata.GetPointData().SetScalars(colors)
@@ -172,31 +180,6 @@ def vtk_show(*args, color: Union[bool, Iterable] = False):
         _display_component.renderer.AddActor(actor)
     _display_component.interactor.Initialize()
     _display_component.interactor.Start()
-
-
-def min_max_nd(source):
-    """
-    依次返回n维数组各维度的min、max
-    例如输入n*3点云，返回xmin, xmax, ymin, ymax, zmin, zmax
-    :param source:
-    :return:
-    """
-    if not isinstance(source, numpy.ndarray):
-        source = numpy.array(source)
-    result = []
-    for dim in source.T:
-        result.append(numpy.min(dim))
-        result.append(numpy.max(dim))
-    return tuple(result)
-
-
-
-def center_3D(source):
-    if type(source) == list:
-        source = np.array(source)
-    center = source.mean(axis=0)
-    return center
-
 
 def pass_filter(source, axis: str, min=None, max=None, both=False):
     if axis in 'xX0':
