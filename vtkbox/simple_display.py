@@ -7,33 +7,28 @@ from vtkmodules import all as vtk
 from typing import Iterable, Union
 
 
-def color_actor(actor, color):
-    if color is True:
-        actor.GetProperty().SetColor(random.random(), random.random(), random.random())
-    elif isinstance(color, Iterable):
-        if sum(color) > 3:
-            color = [c / 255 for c in color]
-        actor.GetProperty().SetColor(*color)
+def rand_color():
+    return random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
 
 
-def intensity_to_rgb(intensity: float):
-    c = np.array([0, 255, 255])
-    m = np.array([255, 0, 255])
-    y = np.array([255, 255, 0])
-    if intensity < 0:
-        rgb = c
-    elif intensity < 0.5:
-        rgb = c * (0.5 - intensity) / 0.5 + y * intensity / 0.5
-    elif intensity < 1:
-        rgb = y * (1 - intensity) / 0.5 + m * (intensity - 0.5) / 0.5
-    else:
-        rgb = m
-    return rgb.astype(int)
-
-def create_color_arr_from_intensity(intensity: numpy.ndarray) :
+def vtk_color_from_intensity(intensity: numpy.ndarray):
     colors = vtk.vtkUnsignedCharArray()
     colors.SetNumberOfComponents(3)
     colors.SetName("Colors")
+
+    def intensity_to_rgb(inte_: float):
+        c = np.array([0, 255, 255])
+        m = np.array([255, 0, 255])
+        y = np.array([255, 255, 0])
+        if inte_ < 0:
+            rgb = c
+        elif inte_ < 0.5:
+            rgb = c * (0.5 - inte_) / 0.5 + y * inte_ / 0.5
+        elif inte_ < 1:
+            rgb = y * (1 - inte_) / 0.5 + m * (inte_ - 0.5) / 0.5
+        else:
+            rgb = m
+        return rgb.astype(int)
 
     unit_i = intensity / intensity.max()
     for i in unit_i:
@@ -41,7 +36,9 @@ def create_color_arr_from_intensity(intensity: numpy.ndarray) :
     return colors
 
 
-def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False, point_size=3):
+def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray],
+                color: tuple[int, int, int] = (255, 255, 255),
+                point_size=3):
     if isinstance(points_list, vtk.vtkPoints):
         points = points_list
     else:
@@ -57,16 +54,15 @@ def point_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False
     mapper.SetScaleFactor(0.0)
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
-    color_actor(actor, color)
+    actor.GetProperty().SetColor([c / 255 for c in color])
     actor.GetProperty().SetPointSize(point_size)
     return actor
 
 
 def point_actor_with_intensity(points_list: Union[list, np.ndarray], point_size=3):
-
-    xyz_arr = points_list[:,:3]
-    i_arr = points_list[:,3]
-    colors = create_color_arr_from_intensity(i_arr)
+    xyz_arr = points_list[:, :3]
+    i_arr = points_list[:, 3]
+    colors = vtk_color_from_intensity(i_arr)
 
     points = vtk.vtkPoints()
     points.SetData(numpy_to_vtk(xyz_arr))
@@ -114,7 +110,9 @@ def stl_actor(stl_path_or_reader):
     return actor
 
 
-def line_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False, line_width=8):
+def line_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray],
+               color: tuple[int, int, int] = (255, 255, 255),
+               line_width=8):
     if isinstance(points_list, vtk.vtkPoints):
         points = points_list
     else:
@@ -129,7 +127,7 @@ def line_actor(points_list: Union[vtk.vtkPoints, list, np.ndarray], color=False,
     mapper.SetInputConnection(line_source.GetOutputPort())
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
-    color_actor(actor, color)
+    actor.GetProperty().SetColor([c / 255 for c in color])
     actor.GetProperty().SetLineWidth(line_width)
     return actor
 
@@ -180,6 +178,7 @@ def vtk_show(*args, color: Union[bool, Iterable] = False):
         _display_component.renderer.AddActor(actor)
     _display_component.interactor.Initialize()
     _display_component.interactor.Start()
+
 
 def pass_filter(source, axis: str, min=None, max=None, both=False):
     if axis in 'xX0':

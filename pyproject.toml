@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vtkbox"
-version = "0.2.0"
+version = "0.2.1"
 authors = [{ name = "zjqtzzc", email = "zjqtzzc1995@gmail.com" }]
 description = "一些个人常用的VTK函数"
 readme = "README.md"  # 如果有 README 文件
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT License" }
 dependencies = [
     "vtk",
