@@ -164,9 +164,14 @@ def get_display_component():
     return _display_component
 
 
-def vtk_show(*args, color: Union[bool, Iterable] = False):
+def vtk_show(*args, with_color=False):
     # clear old actor
     _display_component.renderer.RemoveAllViewProps()
+    # init color
+    if with_color:
+        color = rand_color()
+    else:
+        color = (255, 255, 255)
     # Insert Actor
     for item in args:
         if isinstance(item, (list, np.ndarray)):
