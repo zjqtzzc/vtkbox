@@ -8,25 +8,88 @@ from uuid import uuid4
 import vtkmodules.all as vtk
 
 from .urdf2vtk import VRobot
+from .color import color255_to_1, get_a_great_color
 from .actor_creator import point_actor, source_actor
 
 T = TypeVar('T', vtk.vtkActor, vtk.vtkProp3D)
+
 
 class _DisplayComponent:
     def __init__(self):
         # renderer
         self.renderer = vtk.vtkRenderer()
-        self.renderer.SetBackground(0, 0, 0)
+        self.renderer.SetBackground(*color255_to_1(0x0a, 0x19, 0x2f))
+
+        # 初始使用透视投影
+        self.is_perspective = True
+
         # RenderWindow
         self.render_window = vtk.vtkRenderWindow()
         self.render_window.SetPosition(0, 3000)
         self.render_window.SetSize(3000, 1600)
+
         # interactor
         self.interactor = vtk.vtkRenderWindowInteractor()
+
         # connect vtk part
         self.render_window.AddRenderer(self.renderer)
         self.interactor.SetRenderWindow(self.render_window)
         self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleMultiTouchCamera())
+
+        # 设置按键观察者，处理键盘事件
+        self.interactor.AddObserver("KeyPressEvent", self._key_press_event)
+
+    def _key_press_event(self, obj, event):
+        """处理键盘按键事件"""
+        key = self.interactor.GetKeySym()
+
+        # 按下"o"键切换透视/平行投影
+        if key.lower() == "o":
+            self.toggle_perspective()
+
+    def toggle_perspective(self):
+        """切换相机的透视/平行投影模式"""
+        camera = self.renderer.GetActiveCamera()
+
+        if self.is_perspective:
+            # 切换到平行投影
+            camera.ParallelProjectionOn()
+        else:
+            # 切换到透视投影
+            camera.ParallelProjectionOff()
+
+        # 更新状态标志
+        self.is_perspective = not self.is_perspective
+
+        # 重新渲染以显示更改
+        self.render_window.Render()
+
+        # 可以在这里添加状态提示，例如打印当前模式
+        mode = "透视" if self.is_perspective else "平行"
+        print(f"已切换到{mode}投影模式")
+
+
+_global_display_component = _DisplayComponent()
+
+
+def vtk_show(*args, with_color=False):
+    _global_display_component.renderer.RemoveAllViewProps()
+    # init color
+    if with_color:
+        color = get_a_great_color()
+    else:
+        color = (1.0, 1.0, 1.0)
+    # Insert Actor
+    for item in args:
+        if isinstance(item, (list, numpy.ndarray)):
+            actor = point_actor(item, color)
+        elif issubclass(type(item), vtk.vtkPolyDataAlgorithm):
+            actor = source_actor(item)
+        else:
+            actor = item
+        _global_display_component.renderer.AddActor(actor)
+    _global_display_component.interactor.Initialize()
+    _global_display_component.interactor.Start()
 
 
 class VTKVisualizer:
@@ -100,11 +163,13 @@ class VTKVisualizer:
         actor = point_actor(points, color, point_size)
         return self.add_actor(actor, name)
 
-    def add_box(self, xmin, xmax, ymin, ymax, zmin, zmax, name: str = None) -> tuple[int, vtk.vtkActor]:
+    def add_box(self, xmin, xmax, ymin, ymax, zmin, zmax, opacity: float = 1, name: str = None) -> tuple[
+        int, vtk.vtkActor]:
         cube_source = vtk.vtkCubeSource()
         cube_source.SetBounds([xmin, xmax, ymin, ymax, zmin, zmax])
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection(cube_source.GetOutputPort())
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
+        actor.GetProperty().SetOpacity(opacity)
         return self.add_actor(actor, name)
