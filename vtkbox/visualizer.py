@@ -9,7 +9,7 @@ import vtkmodules.all as vtk
 
 from .urdf2vtk import VRobot
 from .color import color255_to_1, get_a_great_color
-from .actor_creator import point_actor, source_actor
+from .actor_creator import point_actor, point_actor_with_intensity, source_actor
 
 T = TypeVar('T', vtk.vtkActor, vtk.vtkProp3D)
 
@@ -163,8 +163,13 @@ class VTKVisualizer:
         actor = point_actor(points, color, point_size)
         return self.add_actor(actor, name)
 
-    def add_box(self, xmin, xmax, ymin, ymax, zmin, zmax, opacity: float = 1, name: str = None) -> tuple[
-        int, vtk.vtkActor]:
+    def add_points_with_intensity(self, points: list | numpy.ndarray, point_size=3, name: str = None) \
+            -> tuple[int, vtk.vtkActor]:
+        actor = point_actor_with_intensity(points, point_size)
+        return self.add_actor(actor, name)
+
+    def add_box(self, xmin, xmax, ymin, ymax, zmin, zmax, opacity: float = 1, name: str = None) \
+            -> tuple[int, vtk.vtkActor]:
         cube_source = vtk.vtkCubeSource()
         cube_source.SetBounds([xmin, xmax, ymin, ymax, zmin, zmax])
         mapper = vtk.vtkPolyDataMapper()

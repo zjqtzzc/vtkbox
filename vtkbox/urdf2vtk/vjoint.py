@@ -1,5 +1,7 @@
 from vtkmodules import all as vtk
 import numpy
+from urdf_parser_py.urdf import Robot as URobot, Joint as UJoint, Link as ULink
+
 
 class VLink:
     def __init__(self, name, visual: list[vtk.vtkActor], collision: list[vtk.vtkActor]):
@@ -36,65 +38,73 @@ class VLink:
             actor.SetVisibility(self._collision_visible and self._total_visible)
 
 
+class _MimicData:
+    joint: str
+    multiplier: float
+    offset: float
+
 class VJoint:
     TYPE = ['continuous', 'revolute', 'prismatic', 'fixed', 'floating', 'planar']
 
-    def __init__(self, name='', type='unknown', parent='', child='', origin_xyz: list = None,
-                 origin_rpy: list = None, axis: list = None):
-        # input check
-        assert type in VJoint.TYPE, f'Joint {name} type error: {type}'
-        assert parent, f'Joint {name} must have parent'
-        assert child, f'Joint {name} must have child'
-        if origin_xyz is None:
-            origin_xyz = [0, 0, 0]
-        if origin_rpy is None:
-            origin_rpy = [0, 0, 0]
-        if axis is None:
-            axis = [0, 0, 1]
-        # trans axis into unit vector
-        axis = numpy.array(axis)
-        norm = numpy.linalg.norm(axis)
-        if norm == 0:
-            raise ValueError(f'Joint {name} axis can\'t be zero')
-        axis = axis / norm
-        # input params
-        self.name = name
-        self.type = type
-        self.parent = parent
-        self.child = child
-        self.origin_xyz = origin_xyz
-        self.origin_rpy = origin_rpy
-        self.axis = axis
-        #
-        self.prop = vtk.vtkAssembly()
-        #
-        self.set_pose(origin_xyz, origin_rpy)
+    prop: vtk.vtkAssembly
 
-    def set_pose(self, xyz, rpy):
+    name: str
+    type: str
+    parent: str
+    child: str
+    origin_xyz: numpy.ndarray
+    origin_rpy: numpy.ndarray
+    axis: numpy.ndarray
+    # optional
+    mimic: _MimicData = None
+
+    def __init__(self):
+        self.prop = vtk.vtkAssembly()
+
+    def set_input(self, ujoint: UJoint):
+        assert ujoint.type in VJoint.TYPE, f'Joint {ujoint.name} type error: {type}'
+        self.name = ujoint.name
+        self.type = ujoint.type
+        self.parent = ujoint.parent
+        self.child = ujoint.child
+        self.origin_xyz = numpy.array(ujoint.origin.xyz)
+        self.origin_rpy = numpy.array(ujoint.origin.rpy)
+        self.axis = numpy.array(ujoint.axis)
+        self._set_static_transform(self.origin_xyz, self.origin_rpy)
+        #
+        if ujoint.mimic:
+            self.mimic = _MimicData()
+            self.mimic.joint = ujoint.mimic.joint
+            self.mimic.multiplier = ujoint.mimic.multiplier
+            self.mimic.offset = ujoint.mimic.offset
+
+    def _set_static_transform(self, xyz, rpy):
         x, y, z = xyz
         roll, pitch, yaw = numpy.degrees(rpy)
-
         trans = vtk.vtkTransform()
         trans.Translate(x, y, z)
         trans.RotateZ(yaw)
         trans.RotateY(pitch)
         trans.RotateX(roll)
-
         self.prop.SetUserTransform(trans)
 
-    def set_pose_2(self, xyz, wxyz):
+    def _update(self, pos: float):
+        if self.type == 'prismatic':
+            vector = self.axis * pos
+            self.prop.SetPosition(vector)
+        else:
+            vector = self.axis * numpy.rad2deg(pos)
+            self.prop.SetOrientation(vector)
 
-        q = vtk.vtkQuaterniond()
-        q.Set(*wxyz)
-        rot_matrix = [[0, 0, 0, ], [0, 0, 0], [0, 0, 0]]
-        q.ToMatrix3x3(rot_matrix)
+    def update(self, pos: float):
+        if self.mimic:
+            print(f'Warning Mimic {self.name} to {self.mimic.joint}; Cannot update self')
+            return
+        self._update(pos)
 
-        matrix4x4 = vtk.vtkMatrix4x4()
-        matrix4x4.Identity()
-
-        for i in range(3):
-            for j in range(3):
-                matrix4x4.SetElement(i, j, rot_matrix[i][j])
-            matrix4x4.SetElement(i, 3, xyz[i])
-
-        self.prop.SetUserMatrix(matrix4x4)
+    def update_mimic(self, pos: float):
+        if not self.mimic:
+            print(f'Warning Joint {self.name} has no mimic')
+            return
+        target = pos * self.mimic.multiplier + self.mimic.offset
+        self._update(target)

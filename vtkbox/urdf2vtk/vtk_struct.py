@@ -1,4 +1,5 @@
 import numpy
+from typing import overload
 
 from urdf_parser_py.urdf import Robot as URobot, Joint as UJoint, Link as ULink
 
@@ -19,6 +20,7 @@ class VRobot:
         self.name = urdf.name
         self.link_map = {}
         self.joint_map = {}
+        self._mimic_map = {}  # type: dict[str, list[str]] # mimiced -> mimicing
 
         # register materials
         actor_creator = ActorCreator(mesh_root_path)
@@ -42,12 +44,14 @@ class VRobot:
 
         # create joints
         for ujoint in urdf.joints:
-            ujoint: UJoint
-            joint = VJoint(
-                ujoint.name, ujoint.type, ujoint.parent, ujoint.child,
-                ujoint.origin.xyz, ujoint.origin.rpy, ujoint.axis
-            )
+            joint = VJoint()
+            joint.set_input(ujoint)
             self.joint_map[joint.name] = joint
+
+        # check mimic
+        for joint in self.joint_map.values():
+            if joint.mimic:
+                self._mimic_map.setdefault(joint.mimic.joint, []).append(joint.name)
 
         # set parent & child
         for joint in self.joint_map.values():
@@ -72,13 +76,21 @@ class VRobot:
         # add axes
         self.axes = RobotAxes(self.link_map)
 
-    def move_joint(self, joint_name: str, pos: float):
-        joint = self.joint_map.get(joint_name)
+    def _update(self, j_name: str, pos: float):
+        joint = self.joint_map.get(j_name)
         if joint is None:
-            raise ValueError(f'Joint {joint_name} not found')
-        if joint.type == 'prismatic':
-            vector = joint.axis * pos
-            joint.prop.SetPosition(vector)
-        else:
-            vector = joint.axis * numpy.rad2deg(pos)
-            joint.prop.SetOrientation(vector)
+            print(f'Joint {j_name} not found')
+            return
+        joint.update(pos)
+
+        if j_name in self._mimic_map:
+            for mimic in self._mimic_map[j_name]:
+                mimicking_joint = self.joint_map.get(mimic)
+                mimicking_joint.update_mimic(pos)
+
+    def set_joint_pos(self, joint_name: str, pos: float):
+        self._update(joint_name, pos)
+
+    def set_joints_pos(self, names: list[str], pos_seq):
+        for name, pos in zip(names, pos_seq):
+            self._update(name, pos)
