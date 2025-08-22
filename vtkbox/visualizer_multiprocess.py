@@ -25,17 +25,13 @@ def sub_main(request: Queue):
     def handle(obj, event):
         while True:
             try:
-                t0 = time.time()
                 path, args, kwargs = request.get_nowait()
-                t1 = time.time()
             except Empty:
                 break
             target = viz
             for p in path:
                 target = getattr(target, p)
             target(*args, **kwargs)
-            t2 = time.time()
-            print(f'get cost {t1-t0:.3f}s, call cost {t2-t1:.3f}s')
 
         obj.Render()
 

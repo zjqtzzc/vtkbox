@@ -22,6 +22,8 @@ class VRobot:
         self.joint_map = {}
         self._mimic_map = {}  # type: dict[str, list[str]] # mimiced -> mimicing
 
+        self.positive_joints = []  # type: list[str]
+
         # register materials
         actor_creator = ActorCreator(mesh_root_path)
         actor_creator.register_material(urdf.materials)
@@ -52,6 +54,11 @@ class VRobot:
         for joint in self.joint_map.values():
             if joint.mimic:
                 self._mimic_map.setdefault(joint.mimic.joint, []).append(joint.name)
+
+        # check positive
+        for joint in self.joint_map.values():
+            if joint.type not in ['fixed'] and joint.mimic is None:
+                self.positive_joints.append(joint.name)
 
         # set parent & child
         for joint in self.joint_map.values():
@@ -87,6 +94,10 @@ class VRobot:
             for mimic in self._mimic_map[j_name]:
                 mimicking_joint = self.joint_map.get(mimic)
                 mimicking_joint.update_mimic(pos)
+
+    def set_q(self, q: numpy.ndarray):
+        for name, pos in zip(self.positive_joints, q):
+            self._update(name, pos)
 
     def set_joint_pos(self, joint_name: str, pos: float):
         self._update(joint_name, pos)
