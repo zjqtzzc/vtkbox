@@ -1,0 +1,15 @@
+name: Feishu PR Notification
+on:
+  pull_request:
+    types: [opened]
+jobs:
+  send_notification:
+    runs-on: ubuntu - latest
+    steps:
+      - name: Send PR notification to Feishu
+        uses: curl/curl@v8
+        with:
+          url: https://open.feishu.cn/open-apis/bot/v2/hook/c0bbc6e5-fefa-4eec-928d-cf0f468f0866
+          method: POST
+          headers: 'Content - Type: application/json'
+          data: '{"msg_type": "text", "content": {"text": "GitHub仓库有新的Pull Request啦！"}}'
