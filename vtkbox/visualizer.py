@@ -116,7 +116,8 @@ class VTKVisualizer:
         uid = uuid4().int
         if name is not None:
             if name in self._actor_name_map:
-                raise ValueError(f"actor name conflict: {name}")
+                print(f"actor name already exist: {name} add actor failed")
+                return -1, vtk.vtkActor()
             self._actor_name_map[name] = uid
 
         self._actor_map[uid] = actor
@@ -178,3 +179,18 @@ class VTKVisualizer:
         actor.SetMapper(mapper)
         actor.GetProperty().SetOpacity(opacity)
         return self.add_actor(actor, name)
+
+    @overload
+    def set_visible(self, name: str, visible: bool) -> None:
+        ...
+
+    @overload
+    def set_visible(self, uid: int, visible: bool) -> None:
+        ...
+
+    def set_visible(self, arg, visible: bool):
+        actor = self.get_actor(arg)
+        if actor is not None:
+            actor.SetVisibility(visible)
+        else:
+            print(f'set_visible failed, {arg} 对象不存在')
