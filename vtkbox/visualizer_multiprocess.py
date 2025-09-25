@@ -17,6 +17,7 @@ class VTKVisualizerRemote:
     def add_points(self, points: Union[list, numpy.ndarray], color: tuple[float, float, float] = (1, 1, 1), point_size: int = 3, name: str = None) -> None: pass
     def add_points_with_intensity(self, points: Union[list, numpy.ndarray], point_size: int = 3, name: str = None) -> None: pass
     def add_box(self, xmin: float, xmax: float, ymin: float, ymax: float, zmin: float, zmax: float, opacity: float = 1, name: str = None) -> None: pass
+    def add_line(self, points: Union[list, numpy.ndarray], color: tuple[float, float, float] = (1, 1, 1), line_width: int = 8, name: str = None) -> None: pass
     def set_visible(self, name: str, visible: bool) -> None: pass
 
 
