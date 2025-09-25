@@ -8,7 +8,10 @@ from .urdf2vtk.vtk_struct import VRobot
 
 
 class VTKVisualizerRemote:
+    """接口类，不应直接实例化。使用 create_visualizer_subprocess() 获取实例。"""
     robot: VRobot
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("VTKVisualizerRemote 不应直接实例化，请使用 create_visualizer_subprocess()")
     def show(self) -> None: pass
     def set_robot(self, urdf_path: str, mesh_root_path: str) -> None: pass
     def add_actor(self, actor: Any, name: str = None) -> None: pass
@@ -17,6 +20,7 @@ class VTKVisualizerRemote:
     def add_points(self, points: Union[list, numpy.ndarray], color: tuple[float, float, float] = (1, 1, 1), point_size: int = 3, name: str = None) -> None: pass
     def add_points_with_intensity(self, points: Union[list, numpy.ndarray], point_size: int = 3, name: str = None) -> None: pass
     def add_box(self, xmin: float, xmax: float, ymin: float, ymax: float, zmin: float, zmax: float, opacity: float = 1, name: str = None) -> None: pass
+    def add_line(self, points: Union[list, numpy.ndarray], color: tuple[float, float, float] = (1, 1, 1), line_width: int = 8, name: str = None) -> None: pass
     def set_visible(self, name: str, visible: bool) -> None: pass
 
 
